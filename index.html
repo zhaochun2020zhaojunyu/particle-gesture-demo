@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子手势交互演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-black overflow-hidden">
+    <!-- Three.js Canvas -->
+    <canvas id="canvas" class="absolute inset-0 w-full h-full"></canvas>
+    
+    <!-- UI Overlay -->
+    <div class="ui-overlay absolute inset-0 pointer-events-none">
+        <!-- Header -->
+        <div class="absolute top-0 left-0 right-0 p-6 flex justify-between items-start">
+            <div class="pointer-events-auto">
+                <h1 class="text-2xl font-bold text-white mb-2 drop-shadow-lg">✨ 粒子手势交互</h1>
+                <div id="cameraStatus" class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" id="statusDot"></span>
+                    <span class="text-gray-300" id="statusText">初始化中...</span>
+                </div>
+            </div>
+            
+            <!-- Camera Preview -->
+            <div class="pointer-events-auto relative">
+                <video id="inputVideo" class="w-32 h-24 rounded-lg border-2 border-gray-600 object-cover" playsinline></video>
+                <canvas id="outputCanvas" class="absolute inset-0 w-32 h-24 rounded-lg pointer-events-none"></canvas>
+                <div class="absolute bottom-1 left-1 text-xs text-white bg-black/50 px-2 py-0.5 rounded">摄像头</div>
+            </div>
+        </div>
+        
+        <!-- Gesture Indicator -->
+        <div class="absolute top-1/2 left-6 transform -translate-y-1/2 pointer-events-auto">
+            <div id="gestureIndicator" class="bg-black/70 backdrop-blur-md rounded-2xl p-4 border border-gray-700">
+                <div class="text-center mb-3">
+                    <span class="text-4xl" id="gestureIcon">✋</span>
+                </div>
+                <div class="text-center">
+                    <p class="text-white font-medium" id="gestureText">等待手势...</p>
+                    <p class="text-gray-400 text-xs mt-1" id="gestureSubtext">open: 爆炸 | close: 还原</p>
+                </div>
+                <div class="mt-3 h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div id="confidenceBar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-100"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demo Mode Toggle -->
+        <div class="absolute top-1/2 right-6 transform -translate-y-1/2 pointer-events-auto">
+            <div class="bg-black/70 backdrop-blur-md rounded-2xl p-4 border border-gray-700 w-48">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-white text-sm font-medium">演示模式</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="demoModeToggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                </div>
+                <p class="text-gray-400 text-xs">自动循环 open/close 手势</p>
+            </div>
+        </div>
+        
+        <!-- Parameters Panel -->
+        <div class="absolute right-6 top-1/2 transform translate-y-24 pointer-events-auto">
+            <div class="bg-black/70 backdrop-blur-md rounded-2xl p-4 border border-gray-700 w-48">
+                <h3 class="text-white text-sm font-medium mb-4">参数调节</h3>
+                
+                <div class="mb-4">
+                    <label class="text-gray-300 text-xs block mb-2">爆炸强度</label>
+                    <input type="range" id="explosionStrength" min="0.5" max="3" step="0.1" value="1.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>弱</span>
+                        <span id="explosionValue">1.5</span>
+                        <span>强</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="text-gray-300 text-xs block mb-2">粒子大小</label>
+                    <input type="range" id="particleSize" min="1" max="5" step="0.5" value="2" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>小</span>
+                        <span id="sizeValue">2</span>
+                        <span>大</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="text-gray-300 text-xs block mb-2">过渡速度</label>
+                    <input type="range" id="transitionSpeed" min="0.01" max="0.1" step="0.01" value="0.05" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>慢</span>
+                        <span id="speedValue">0.05</span>
+                        <span>快</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Shape Buttons -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+            <div class="bg-black/70 backdrop-blur-md rounded-2xl p-2 border border-gray-700 flex gap-2">
+                <button id="btnSaturn" class="shape-btn active px-6 py-3 rounded-xl text-white font-medium transition-all bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105">
+                    🪐 土星
+                </button>
+                <button id="btnHeart" class="shape-btn px-6 py-3 rounded-xl text-gray-300 font-medium transition-all bg-gray-800 hover:bg-gray-700 hover:scale-105">
+                    ❤️ 爱心
+                </button>
+                <button id="btnStar" class="shape-btn px-6 py-3 rounded-xl text-gray-300 font-medium transition-all bg-gray-800 hover:bg-gray-700 hover:scale-105">
+                    ⭐ 五芒星
+                </button>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="absolute bottom-8 left-8 pointer-events-auto">
+            <div class="bg-black/50 backdrop-blur-sm rounded-xl p-3 border border-gray-700/50">
+                <p class="text-gray-400 text-xs">
+                    🖐️ <span class="text-white">张开手掌</span> = 爆炸<br>
+                    ✊ <span class="text-white">握紧拳头</span> = 还原<br>
+                    🎛️ <span class="text-white">点击按钮</span> = 切换形态
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+</body>
+</html>
