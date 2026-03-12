@@ -99,8 +99,10 @@ function createParticles() {
     // 设置初始形态
     generateShape('saturn');
     
-    // 复制到当前位置
-    positions.set(targetPositions);
+    // 复制到当前位置（必须在 generateShape 之后！）
+    for (let i = 0; i < count * 3; i++) {
+        positions[i] = targetPositions[i];
+    }
     
     // 设置几何体属性
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
