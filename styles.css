@@ -1,0 +1,135 @@
+/* 粒子手势交互演示 - 样式 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Canvas 样式 */
+#canvas {
+    display: block;
+}
+
+/* UI 覆盖层 */
+.ui-overlay {
+    z-index: 10;
+}
+
+/* 按钮激活状态 */
+.shape-btn.active {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+/* 滑块自定义样式 */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+    background: #374151;
+    height: 8px;
+    border-radius: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    background: #8b5cf6;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    margin-top: -4px;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-track {
+    background: #374151;
+    height: 8px;
+    border-radius: 4px;
+}
+
+input[type="range"]::-moz-range-thumb {
+    background: #8b5cf6;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+/* 摄像头预览 */
+#inputVideo {
+    transform: scaleX(-1); /* 镜像 */
+}
+
+#outputCanvas {
+    transform: scaleX(-1);
+}
+
+/* 状态点动画 */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .ui-overlay {
+        font-size: 14px;
+    }
+    
+    #inputVideo,
+    #outputCanvas {
+        width: 80px;
+        height: 60px;
+    }
+    
+    .shape-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+
+/* 手势指示器动画 */
+#gestureIndicator {
+    transition: border-color 0.3s;
+}
+
+#gestureIndicator.open {
+    border-color: #3b82f6;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+#gestureIndicator.close {
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* 渐变文字 */
+.gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
